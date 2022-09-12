@@ -1,6 +1,7 @@
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, ExprVisitor
+from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign
 from Token import TokenType 
-from Stmt import Stmt, Expression, Print, StmtVisitor
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block
+from Environment import Environment
 import pylox
 
 # helper 
@@ -33,7 +34,10 @@ def stringify(s) -> str:
 
     return str(s)
 
-class Interpreter(ExprVisitor, StmtVisitor):
+class Interpreter(ExprVisitor, StmtVisitor):    
+
+    def __init__(self) -> None:
+        self.environment = Environment()
 
     def interpret(self, statements: 'list[Stmt]'):
         try:
@@ -44,16 +48,35 @@ class Interpreter(ExprVisitor, StmtVisitor):
             return None
 
 # ----------- visiting statemenst -------------
-    def visitExpressionStmt(self, expr: Expression):
-        self.evaluate(expr.expression)
-        # statments dont have a return value since they dont evaluate to a value
+    # statments dont have a return value since they dont evaluate to a value
 
-    def visitPrintStmt(self, expr: Print):
-        value = self.evaluate(expr.expression)
+    def visitBlockStmt(self, stmt: Block):
+        self.executeBlock(stmt.statements, Environment(self.environment))
+
+    def visitVarStmt(self, stmt: Var):
+        value = None
+        if stmt.initializer != None:
+            value = self.evaluate(stmt.initializer)
+        self.environment.define(stmt.name.lexeme, value)
+
+    def visitExpressionStmt(self, stmt: Expression):
+        self.evaluate(stmt.expression)
+
+    def visitPrintStmt(self, stmt: Print):
+        value = self.evaluate(stmt.expression)
         print(stringify(value))
 
 
 # ----------- visiting expressions ------------
+
+    def visitAssignExpr(self, expr: Assign):
+        value = self.evaluate(expr.value)
+        self.environment.assign(expr.name, value)
+        return value
+
+    def visitVariableExpr(self, expr: Variable):
+        return self.environment.get(expr.name)
+
     def visitLiteralExpr(self, expr: Literal):
         return expr.value
 
@@ -116,7 +139,18 @@ class Interpreter(ExprVisitor, StmtVisitor):
         #else - unreachable
         return None
 
+# -------------- helpers, executors and evaluators ----
 
+    def executeBlock(self, statements: 'list[Stmt]', environment: Environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+            for statement in statements:
+                self.execute(statement)
+        
+        finally:
+            self.environment = previous
+    
     # evaluate for Stmts
     def execute(self, stms: Stmt):
         return stms.accept(self)

@@ -9,6 +9,14 @@ class Expr (ABC):
         pass
 
 
+class Assign(Expr):
+    def __init__(self, name:Token, value:Expr, ):
+        super().__init__()
+        self.name = name
+        self.value = value
+    def accept(self, visitor: any):
+        return visitor.visitAssignExpr(self)
+
 class Binary(Expr):
     def __init__(self, left:Expr, operator:Token, right:Expr, ):
         super().__init__()
@@ -40,9 +48,18 @@ class Unary(Expr):
     def accept(self, visitor: any):
         return visitor.visitUnaryExpr(self)
 
+class Variable(Expr):
+    def __init__(self, name:Token, ):
+        super().__init__()
+        self.name = name
+    def accept(self, visitor: any):
+        return visitor.visitVariableExpr(self)
+
 class ExprVisitor:
     def __str__(self):
         return self.__class__.__name__
+    def visitAssignExpr(self, expr:Assign):
+        pass
     def visitBinaryExpr(self, expr:Binary):
         pass
     def visitGroupingExpr(self, expr:Grouping):
@@ -50,4 +67,6 @@ class ExprVisitor:
     def visitLiteralExpr(self, expr:Literal):
         pass
     def visitUnaryExpr(self, expr:Unary):
+        pass
+    def visitVariableExpr(self, expr:Variable):
         pass

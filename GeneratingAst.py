@@ -1,10 +1,10 @@
 """ helper file for generating classes for ast """
 
 
-expr_strs = ["Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : any value",
-            "Unary: Token operator, Expr right"]
+expr_strs = ["Assign : Token name, Expr value","Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : any value",
+            "Unary: Token operator, Expr right", "Variable : Token name"]
 
-stmt_strs = ["Expression : Expr expression", "Print : Expr expression"]
+stmt_strs = ["Block : 'list[Stmt]' statements","Expression : Expr expression", "Print : Expr expression", "Var : Token name, Expr initializer"]
 
 l = [expr_strs, stmt_strs]
 
@@ -20,7 +20,8 @@ with open(base_class_name+".py", "w") as f:
         # import 
         "from abc import ABC\n",
         "from Token import Token\n",
-        "\n"
+        f"{'from Expr import Expr\n' if base_class_name == 'Stmt' else ''}",
+        "\n",
         # ABC        
         f"class {base_class_name} (ABC):\n",    
         "    def __init__(self) -> None:\n"
@@ -64,5 +65,5 @@ with open(base_class_name+".py", "w") as f:
     for production in in_strs:
         l1 = production.split(":")
         class_name = l1[0].strip()
-        f.write(f"    def visit{class_name.capitalize()}{base_class_name.capitalize()}(self, expr:{class_name}):\n")
+        f.write(f"    def visit{class_name.capitalize()}{base_class_name.capitalize()}(self, {base_class_name.lower()}:{class_name}):\n")
         f.write("        pass\n")

@@ -4,10 +4,11 @@ from Token import Token, TokenType
 import Parser
 import AstPrinter
 import Interpreter
+from Flags import Flags
+
+Flags = Flags()
 
 # globals ? idk java thing
-hadError: bool
-hadRuntimeError : bool
 interpreter = Interpreter.Interpreter()
 
 class LoxRuntimeError(RuntimeError):
@@ -35,38 +36,37 @@ def runFile(path):
     infile.close()
     run(buffer)
 
-    if hadError:
+    if Flags.hadError:
         sys.exit(65)
-    if hadRuntimeError:
+    if Flags.hadRuntimeError:
         sys.exit(70)
 
 
 def runPrompt():
-    global hadError
     while True:
         print("> ", end="")
         try:
             line = input()
-            run(line)
-            hadError = False
+            run(line, REPLmode=True) # REPL mode
+            Flags.hadError = False
         except EOFError:
             break
 
 
-def run(source):
-    global hadError, hadRuntimeError ,interpreter
+def run(source, REPLmode = False):
     scanner = Scanner.Scanner(source)
     tokens:'list[Token]' = scanner.scanTokens()
 
     # for token in tokens:
     #     print(token)
 
-    stmt_list = Parser.Parser(tokens).parse()
-    if stmt_list is None:
+    stmt_list = Parser.Parser(tokens, inREPLmode = REPLmode).parse()
+
+    if stmt_list == None:
         return
 
     out_str = interpreter.interpret(stmt_list)
-    if hadRuntimeError or out_str is None:
+    if Flags.hadRuntimeError or out_str is None:
         return
 
     print(out_str)
@@ -79,16 +79,13 @@ def error(token: Token, mess: str):
         report(token.line, " at '"+ token.lexeme + "'", mess)
 
 def runtimeError(error: LoxRuntimeError):
-    global hadError, hadRuntimeError
     print(error.mess)
     print("[line " + str(error.token.line) + "]")
-    hadError = True
-    hadRuntimeError = True
+    Flags.hadRuntimeError = True
 
 def report(line, where, mess):
     print(f"[line  {line} ] Error {where} : {mess}")
-    global hadError
-    hadError = True
+    Flags.hadError = True
 
 
 if __name__ == "__main__":

@@ -9,6 +9,12 @@ class Stmt (ABC):
     def accept(self, visitor: any):
         pass
 
+class Block(Stmt):
+    def __init__(self, statements:'list[Stmt]', ):
+        super().__init__()
+        self.statements = statements
+    def accept(self, visitor: any):
+        return visitor.visitBlockStmt(self)
 
 class Expression(Stmt):
     def __init__(self, expression:Expr, ):
@@ -24,10 +30,22 @@ class Print(Stmt):
     def accept(self, visitor: any):
         return visitor.visitPrintStmt(self)
 
+class Var(Stmt):
+    def __init__(self, name:Token, initializer:Expr, ):
+        super().__init__()
+        self.name = name
+        self.initializer = initializer
+    def accept(self, visitor: any):
+        return visitor.visitVarStmt(self)
+
 class StmtVisitor:
     def __str__(self):
         return self.__class__.__name__
-    def visitExpressionStmt(self, expr:Expression):
+    def visitBlockStmt(self, stmt:Block):
         pass
-    def visitPrintStmt(self, expr:Print):
+    def visitExpressionStmt(self, stmt:Expression):
+        pass
+    def visitPrintStmt(self, stmt:Print):
+        pass
+    def visitVarStmt(self, stmt:Var):
         pass
