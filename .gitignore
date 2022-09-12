@@ -1,5 +1,9 @@
 # copied boilerplate gitignore from github.com/github/gitignore/blob/main/Python.gitignore
 
+# my stuff
+*.lox
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
