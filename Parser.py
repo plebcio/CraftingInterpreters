@@ -1,5 +1,6 @@
 from Token import Token, TokenType
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Visitor
+from Expr import Expr, Binary, Grouping, Unary, Literal, Token
+from Stmt import Stmt, Expression, Print
 import pylox
 
 # implementing the recursive decent parser
@@ -14,13 +15,33 @@ class Parser:
 
 
     def parse(self):
-        try:
-            out = self.expression()
-            return out
-        except ParseError:
-            return None
+        self.statements = []
+        while not self.isAtEnd():
+            try:
+                self.statements.append( self.statement() )
+            except ParseError as pError:
+                pass # ??????? FIXME
 
-# ------- handling productions top down --------------------
+        return self.statements
+
+# ------- handling statement productions ----------
+    def statement(self):
+        if (self.match([TokenType.PRINT])):
+            return self.printStatement()
+
+        return self.expressionStatement()   
+    
+    def printStatement(self):
+        value: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, 'Expected ";" after value')
+        return Print(value)
+
+    def expressionStatement(self):
+        expr: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, 'Expected ";" after expression')
+        return Expression(expr)
+
+# ------- handling expression productions top down --------------------
 
     def expression(self):
         return self.equality()

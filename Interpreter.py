@@ -1,5 +1,6 @@
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Visitor
+from Expr import Expr, Binary, Grouping, Unary, Literal, Token, ExprVisitor
 from Token import TokenType 
+from Stmt import Stmt, Expression, Print, StmtVisitor
 import pylox
 
 # helper 
@@ -32,17 +33,27 @@ def stringify(s) -> str:
 
     return str(s)
 
-class Interpreter(Visitor):
+class Interpreter(ExprVisitor, StmtVisitor):
 
-    def interpret(self, expression: Expr):
+    def interpret(self, statements: 'list[Stmt]'):
         try:
-            value = self.evaluate(expression)
-            return print(stringify(value))
+            for statement in statements:
+                self.execute(statement)
         except pylox.LoxRuntimeError as error:
             pylox.runtimeError(error)
             return None
 
+# ----------- visiting statemenst -------------
+    def visitExpressionStmt(self, expr: Expression):
+        self.evaluate(expr.expression)
+        # statments dont have a return value since they dont evaluate to a value
 
+    def visitPrintStmt(self, expr: Print):
+        value = self.evaluate(expr.expression)
+        print(stringify(value))
+
+
+# ----------- visiting expressions ------------
     def visitLiteralExpr(self, expr: Literal):
         return expr.value
 
@@ -102,13 +113,13 @@ class Interpreter(Visitor):
             return not (right == left)
         elif expr.operator.type == TokenType.EQUAL_EQUAL:
             return right == left
-        
-
-
-
         #else - unreachable
         return None
 
+
+    # evaluate for Stmts
+    def execute(self, stms: Stmt):
+        return stms.accept(self)
 
     def evaluate(self, expr: Expr):
         return expr.accept(self)

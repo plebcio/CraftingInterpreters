@@ -1,9 +1,19 @@
 """ helper file for generating classes for ast """
 
-in_strs = ["Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : any value",
+
+expr_strs = ["Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : any value",
             "Unary: Token operator, Expr right"]
 
+stmt_strs = ["Expression : Expr expression", "Print : Expr expression"]
+
+l = [expr_strs, stmt_strs]
+
 base_class_name = input("Base class name: ")
+
+a = input("expr:0, stms:1\n : ")
+
+in_strs = l[int(a)]
+
 
 with open(base_class_name+".py", "w") as f:
     f.writelines([
@@ -46,7 +56,7 @@ with open(base_class_name+".py", "w") as f:
         
 
     f.writelines([
-            "\n\nclass Visitor:\n",
+            f"\n\nclass {base_class_name.capitalize()}Visitor:\n",
             "    def __str__(self):\n",
             "        return self.__class__.__name__\n"
         ])

@@ -1,4 +1,3 @@
-from pickle import TRUE
 import sys
 import Scanner
 from Token import Token, TokenType
@@ -62,13 +61,11 @@ def run(source):
     # for token in tokens:
     #     print(token)
 
-    AstRoot = Parser.Parser(tokens).parse()
-    if AstRoot is None:
+    stmt_list = Parser.Parser(tokens).parse()
+    if stmt_list is None:
         return
 
-    printer = AstPrinter.AstPrinter()
-    printer.print_out(AstRoot)
-    out_str = interpreter.interpret(AstRoot)
+    out_str = interpreter.interpret(stmt_list)
     if hadRuntimeError or out_str is None:
         return
 

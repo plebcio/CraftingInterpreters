@@ -1,7 +1,7 @@
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Visitor
+from Expr import Expr, Binary, Grouping, Unary, Literal, Token, ExprVisitor
 from Token import TokenType 
 
-class AstPrinter(Visitor):
+class AstPrinter(ExprVisitor):
     def print_out(self, expr: Expr):
         return expr.accept(self)
 

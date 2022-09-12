@@ -40,7 +40,7 @@ class Unary(Expr):
     def accept(self, visitor: any):
         return visitor.visitUnaryExpr(self)
 
-class Visitor:
+class ExprVisitor:
     def __str__(self):
         return self.__class__.__name__
     def visitBinaryExpr(self, expr:Binary):
