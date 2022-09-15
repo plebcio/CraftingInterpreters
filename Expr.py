@@ -1,6 +1,7 @@
 from abc import ABC
 from Token import Token
 
+
 class Expr (ABC):
     def __init__(self) -> None:
        super().__init__()
@@ -40,6 +41,15 @@ class Literal(Expr):
     def accept(self, visitor: any):
         return visitor.visitLiteralExpr(self)
 
+class Logical(Expr):
+    def __init__(self, left:Expr, operator:Token, right:Expr, ):
+        super().__init__()
+        self.left = left
+        self.operator = operator
+        self.right = right
+    def accept(self, visitor: any):
+        return visitor.visitLogicalExpr(self)
+
 class Unary(Expr):
     def __init__(self, operator:Token, right:Expr, ):
         super().__init__()
@@ -65,6 +75,8 @@ class ExprVisitor:
     def visitGroupingExpr(self, expr:Grouping):
         pass
     def visitLiteralExpr(self, expr:Literal):
+        pass
+    def visitLogicalExpr(self, expr:Logical):
         pass
     def visitUnaryExpr(self, expr:Unary):
         pass

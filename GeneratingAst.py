@@ -2,9 +2,10 @@
 
 
 expr_strs = ["Assign : Token name, Expr value","Binary : Expr left, Token operator, Expr right", "Grouping : Expr expression", "Literal : any value",
-            "Unary: Token operator, Expr right", "Variable : Token name"]
+            "Logical : Expr left, Token operator, Expr right","Unary: Token operator, Expr right", "Variable : Token name"]
 
-stmt_strs = ["Block : 'list[Stmt]' statements","Expression : Expr expression", "Print : Expr expression", "Var : Token name, Expr initializer"]
+stmt_strs = ["Block : 'list[Stmt]' statements","Expression : Expr expression", "If : Expr condition, Stmt thenBranch, Stmt elseBranch", 
+            "Print : Expr expression", "Var : Token name, Expr initializer", "While : Expr condition, Stmt body", "StopIter: Token name"]
 
 l = [expr_strs, stmt_strs]
 
@@ -20,8 +21,8 @@ with open(base_class_name+".py", "w") as f:
         # import 
         "from abc import ABC\n",
         "from Token import Token\n",
-        f"{'from Expr import Expr\n' if base_class_name == 'Stmt' else ''}",
-        "\n",
+        f"{'from Expr import Expr' if base_class_name == 'Stmt' else ''}",
+        "\n\n",
         # ABC        
         f"class {base_class_name} (ABC):\n",    
         "    def __init__(self) -> None:\n"
@@ -55,7 +56,6 @@ with open(base_class_name+".py", "w") as f:
         f.write("    def accept(self, visitor: any):\n")
         f.write(f"        return visitor.visit{class_name.capitalize()}{base_class_name.capitalize()}(self)") 
         
-
     f.writelines([
             f"\n\nclass {base_class_name.capitalize()}Visitor:\n",
             "    def __str__(self):\n",

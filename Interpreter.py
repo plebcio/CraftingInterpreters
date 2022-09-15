@@ -1,6 +1,6 @@
-from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign
+from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical
 from Token import TokenType 
-from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter
 from Environment import Environment
 import pylox
 
@@ -62,6 +62,27 @@ class Interpreter(ExprVisitor, StmtVisitor):
     def visitExpressionStmt(self, stmt: Expression):
         self.evaluate(stmt.expression)
 
+    def visitIfStmt(self, stmt: If):
+        if isTruthy(self.evaluate(stmt.condition)):
+            self.execute(stmt.thenBranch)
+        elif stmt.elseBranch != None:
+            self.execute(stmt.elseBranch)
+
+    def visitWhileStmt(self, stmt: While):
+        while isTruthy(self.evaluate( stmt.condition )):
+            try:
+                self.execute(stmt.body)
+            except pylox.LoxBreakIter:
+                break
+            except pylox.LoxContinueIter:
+                continue
+
+    def visitStopiterStmt(self, stmt: StopIter):
+        if stmt.name.type == TokenType.BREAK:
+            raise pylox.LoxBreakIter(stmt.name, "Invalid: 'break' statement outside of loop")
+        # else
+        raise pylox.LoxContinueIter(stmt.name, "Invalid: 'continue' statement outside of loop")
+
     def visitPrintStmt(self, stmt: Print):
         value = self.evaluate(stmt.expression)
         print(stringify(value))
@@ -79,6 +100,17 @@ class Interpreter(ExprVisitor, StmtVisitor):
 
     def visitLiteralExpr(self, expr: Literal):
         return expr.value
+
+    def visitLogicalExpr(self, expr: Logical):
+        left = self.evaluate(expr.left)
+
+        if expr.operator.type == TokenType.OR:
+            if isTruthy(left):
+                return left 
+        elif not isTruthy(left):
+            return left 
+
+        return self.evaluate(expr.right)
 
     def visitGroupingExpr(self, expr: Grouping):
         return self.evaluate(expr.expression)

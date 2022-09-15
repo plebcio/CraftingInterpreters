@@ -16,6 +16,14 @@ class LoxRuntimeError(RuntimeError):
         self.mess = mess # ??? FIXME ???
         self.token = token
 
+class LoxBreakIter(LoxRuntimeError):
+    def __init__(self, token: Token, mess: str) -> None:
+        super().__init__(token, mess)
+class LoxContinueIter(LoxRuntimeError):
+    def __init__(self, token: Token, mess: str) -> None:
+        super().__init__(token, mess)
+
+
 def main():
     global hadError, hadRuntimeError
     hadError = False
