@@ -27,6 +27,15 @@ class Binary(Expr):
     def accept(self, visitor: any):
         return visitor.visitBinaryExpr(self)
 
+class Call(Expr):
+    def __init__(self, callee:Expr, paren:Token, arguments:'list[Expr]', ):
+        super().__init__()
+        self.callee = callee
+        self.paren = paren
+        self.arguments = arguments
+    def accept(self, visitor: any):
+        return visitor.visitCallExpr(self)
+
 class Grouping(Expr):
     def __init__(self, expression:Expr, ):
         super().__init__()
@@ -71,6 +80,8 @@ class ExprVisitor:
     def visitAssignExpr(self, expr:Assign):
         pass
     def visitBinaryExpr(self, expr:Binary):
+        pass
+    def visitCallExpr(self, expr:Call):
         pass
     def visitGroupingExpr(self, expr:Grouping):
         pass

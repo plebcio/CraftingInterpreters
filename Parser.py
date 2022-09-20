@@ -1,6 +1,6 @@
 from Token import Token, TokenType
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign, Logical
-from Stmt import Stmt, Expression, Print, Var, Block, If, While, StopIter
+from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign, Logical, Call
+from Stmt import Stmt, Expression, Print, Var, Block, If, While, StopIter, Function 
 import pylox
 from Flags import Flags
 
@@ -34,6 +34,8 @@ class Parser:
 
     def declaration(self):
         try:
+            if self.match([TokenType.FUN]):
+                return self.function("function")
             if self.match([TokenType.VAR]):
                 return self.varDeclaration()
             return self.statement()
@@ -158,6 +160,24 @@ class Parser:
 
         return Expression(expr)
 
+    def function(self, kind:str):
+        name: Token = self.consume(TokenType.IDENTIFIER, f"Expected {kind} name")
+        self.consume(TokenType.LEFT_PAREN, f"Expected '(' after {kind} name.")
+        parameters = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            # like a "do while" loop
+            parameters.append( self.consume(TokenType.IDENTIFIER, "Expected parameter name"))
+            while self.match([TokenType.COMMA]):
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters")
+                parameters.append( self.consume(TokenType.IDENTIFIER, "Expected parameter name"))
+        
+        self.consume(TokenType.RIGHT_PAREN, f"Expected ')' after {kind} name.")
+
+        self.consume(TokenType.LEFT_BRACE, f"Expected '{{' before {kind} body")
+        body: 'list[Stmt]' = self.block()
+        return Function(name, parameters, body)
+
     def block(self):
         stmts = []
         while not self.check(TokenType.RIGHT_BRACE) and not self.isAtEnd():
@@ -248,7 +268,32 @@ class Parser:
             right: Expr = self.unary()
             return Unary(operator, right)
     
-        return self.primary()
+        return self.call()
+
+    def call(self):
+        expr: Expr = self.primary()
+        while True: 
+            if self.match([TokenType.LEFT_PAREN]):
+                expr = self.finishCall(expr)
+            else:
+                break
+
+        return expr
+    
+    def finishCall(self, callee: Expr):
+        arguments = []
+
+        if not self.check(TokenType.RIGHT_PAREN):
+            arguments.append( self.expression() )
+            while(self.match([TokenType.COMMA])):
+                if len(arguments) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 arguments")
+                arguments.append( self.expression() )
+        
+        paren: Token = self.consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments")
+
+        return Call(callee, paren, arguments)
+
 
     def primary(self):        
         if self.match([TokenType.FALSE]):

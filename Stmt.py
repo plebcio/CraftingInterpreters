@@ -24,6 +24,15 @@ class Expression(Stmt):
     def accept(self, visitor: any):
         return visitor.visitExpressionStmt(self)
 
+class Function(Stmt):
+    def __init__(self, name:Token, params:'list[Token]', body:list[Stmt], ):
+        super().__init__()
+        self.name = name
+        self.params = params
+        self.body = body
+    def accept(self, visitor: any):
+        return visitor.visitFunctionStmt(self)
+
 class If(Stmt):
     def __init__(self, condition:Expr, thenBranch:Stmt, elseBranch:Stmt, ):
         super().__init__()
@@ -69,6 +78,8 @@ class StmtVisitor:
     def visitBlockStmt(self, stmt:Block):
         pass
     def visitExpressionStmt(self, stmt:Expression):
+        pass
+    def visitFunctionStmt(self, stmt:Function):
         pass
     def visitIfStmt(self, stmt:If):
         pass

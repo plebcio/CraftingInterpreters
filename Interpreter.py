@@ -1,8 +1,11 @@
-from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical
+from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical, Call
 from Token import TokenType 
-from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function
+import LoxCallable
 from Environment import Environment
 import pylox
+
+
 
 # helper 
 # everything apart from nil (None under the hood) and false is evaluated to true
@@ -37,7 +40,12 @@ def stringify(s) -> str:
 class Interpreter(ExprVisitor, StmtVisitor):    
 
     def __init__(self) -> None:
-        self.environment = Environment()
+        self.globals = Environment()
+        self.environment = self.globals
+        # or 
+        # self.environment = Environment(self.globals)
+
+        self.globals.define("clock", LoxCallable.clock())
 
     def interpret(self, statements: 'list[Stmt]'):
         try:
@@ -87,6 +95,10 @@ class Interpreter(ExprVisitor, StmtVisitor):
         value = self.evaluate(stmt.expression)
         print(stringify(value))
 
+    def visitFunctionStmt(self, stmt: Function):
+        function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(stmt)
+        self.environment.define(stmt.name.lexeme, function)
+        return None
 
 # ----------- visiting expressions ------------
 
@@ -170,6 +182,21 @@ class Interpreter(ExprVisitor, StmtVisitor):
             return right == left
         #else - unreachable
         return None
+
+    def visitCallExpr(self, expr: Call):
+        callee = self.evaluate( expr.callee )
+
+        arguments: 'list[Expr]' = []
+        for arg in expr.arguments:
+            arguments.append( self.evaluate(arg))
+        
+        if not isinstance(callee, LoxCallable.LoxCallable):
+            raise pylox.LoxRuntimeError(expr.paren, "Can only call functions and classes.")
+        function: LoxCallable.LoxCallable = callee
+        if len(arguments) != function.arity():
+            raise pylox.runtimeError(expr.paren, f"Exprcted {function.arity()} arguments but got {arguments.size()}.")
+
+        return function.call(self, arguments)
 
 # -------------- helpers, executors and evaluators ----
 
