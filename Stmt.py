@@ -8,6 +8,12 @@ class Stmt (ABC):
        pass
     def accept(self, visitor: any):
         pass
+    def __eq__(self, __o: object) -> bool:
+        return self is __o
+    def __hash__(self):
+        return hash(id(self))
+
+
 
 
 class Block(Stmt):
@@ -41,6 +47,14 @@ class If(Stmt):
         self.elseBranch = elseBranch
     def accept(self, visitor: any):
         return visitor.visitIfStmt(self)
+
+class Return(Stmt):
+    def __init__(self, keyword:Token, value:Expr, ):
+        super().__init__()
+        self.keyword = keyword
+        self.value = value
+    def accept(self, visitor: any):
+        return visitor.visitReturnStmt(self)
 
 class Print(Stmt):
     def __init__(self, expression:Expr, ):
@@ -82,6 +96,8 @@ class StmtVisitor:
     def visitFunctionStmt(self, stmt:Function):
         pass
     def visitIfStmt(self, stmt:If):
+        pass
+    def visitReturnStmt(self, stmt:Return):
         pass
     def visitPrintStmt(self, stmt:Print):
         pass

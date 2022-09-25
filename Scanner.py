@@ -114,7 +114,7 @@ class Scanner:
             elif self.isAlpha(c):
                 self.identifier()
             else:       
-                pylox.error(self.line, "Unexpected character.")            
+                pylox.error(Token(TokenType.ERROR, c, None, self.line), "Unexpected character.")            
 
     def identifier(self):
         while(self.isAlphaNumeric(self.peek())):

@@ -1,6 +1,6 @@
 from Token import Token, TokenType
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign, Logical, Call
-from Stmt import Stmt, Expression, Print, Var, Block, If, While, StopIter, Function 
+from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign, Logical, Call, Lambda
+from Stmt import Stmt, Expression, Print, Var, Block, If, While, StopIter, Function, Return
 import pylox
 from Flags import Flags
 
@@ -80,6 +80,9 @@ class Parser:
             tok = self.previous()
             self.consume(TokenType.SEMICOLON, "Expected ';' after continue")
             return StopIter(tok)
+
+        if self.match([TokenType.RETURN]):
+                return self.returnStatement()
 
         return self.expressionStatement()   
 
@@ -161,6 +164,10 @@ class Parser:
         return Expression(expr)
 
     def function(self, kind:str):
+        if self.peek().type == TokenType.LEFT_PAREN:
+            expression =  Expression(self.lambdaExpression())
+            self.consume(TokenType.SEMICOLON, "Expected ';' after lambda function")
+            return expression
         name: Token = self.consume(TokenType.IDENTIFIER, f"Expected {kind} name")
         self.consume(TokenType.LEFT_PAREN, f"Expected '(' after {kind} name.")
         parameters = []
@@ -186,6 +193,16 @@ class Parser:
         self.consume(TokenType.RIGHT_BRACE, "Expected '}' after block")
         return stmts
         
+    def returnStatement(self):
+        keyword: Token = self.previous()
+        value: Expr = None
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+        
+        self.consume(TokenType.SEMICOLON, "Expected ';' after return value")
+        return Return(keyword, value)
+
+
 # ------- handling expression productions top down --------------------
 
     def expression(self):
@@ -303,6 +320,10 @@ class Parser:
         if self.match([TokenType.NIL]):
             return Literal(None)
 
+        if self.match([TokenType.FUN]):
+            # matched a lambda expression
+            return self.lambdaExpression()
+
         if self.match([TokenType.NUMBER, TokenType.STRING]):
             return Literal(self.previous().literal)
 
@@ -318,6 +339,22 @@ class Parser:
 
         raise self.error(self.peek(), "Expected expression")
 
+    def lambdaExpression(self):
+        self.consume(TokenType.LEFT_PAREN, "Expected '(' after start of lambda function expression")
+        parameters = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            # like a "do while" loop
+            parameters.append( self.consume(TokenType.IDENTIFIER, "Expected parameter name"))
+            while self.match([TokenType.COMMA]):
+                if len(parameters) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters")
+                parameters.append( self.consume(TokenType.IDENTIFIER, "Expected parameter name"))
+        
+        self.consume(TokenType.RIGHT_PAREN, f"Expected ')' after lambda fn parameters.")
+
+        self.consume(TokenType.LEFT_BRACE, f"Expected '{{' before lambda fuction body")
+        body: 'list[Stmt]' = self.block()
+        return Lambda(parameters, body)
 
 # --------------- error handling stuff (?) ---------
 

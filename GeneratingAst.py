@@ -3,11 +3,11 @@
 
 expr_strs = ["Assign : Token name, Expr value","Binary : Expr left, Token operator, Expr right", "Call : Expr callee, Token paren, 'list[Expr]' arguments", 
             "Grouping : Expr expression", "Literal : any value", "Logical : Expr left, Token operator, Expr right",
-            "Unary: Token operator, Expr right", "Variable : Token name"]
+            "Unary: Token operator, Expr right", "Variable : Token name", "Lambda : 'list[Token]' params, any body"]
 
 stmt_strs = ["Block : 'list[Stmt]' statements","Expression : Expr expression", "Function : Token name, 'list[Token]' params, list[Stmt] body",
-            "If : Expr condition, Stmt thenBranch, Stmt elseBranch", 
-            "Print : Expr expression", "Var : Token name, Expr initializer", "While : Expr condition, Stmt body", "StopIter: Token name"]
+            "If : Expr condition, Stmt thenBranch, Stmt elseBranch", "Return : Token keyword, Expr value", "Print : Expr expression", 
+            "Var : Token name, Expr initializer", "While : Expr condition, Stmt body", "StopIter: Token name"]
 
 l = [expr_strs, stmt_strs]
 
@@ -31,7 +31,11 @@ with open(base_class_name+".py", "w") as f:
         "       super().__init__()\n",
         "       pass\n"
         "    def accept(self, visitor: any):\n",
-        "        pass"
+        "        pass\n",
+        "    def __eq__(self, __o: object) -> bool:\n",
+        "        return self is __o\n",
+        "    def __hash__(self):\n",
+        "        return hash(id(self))\n\n",
         "\n",
     ])
 

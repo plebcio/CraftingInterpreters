@@ -4,6 +4,7 @@ from Token import Token, TokenType
 import Parser
 import AstPrinter
 import Interpreter
+import Resolver
 from Flags import Flags
 
 Flags = Flags()
@@ -13,8 +14,9 @@ interpreter = Interpreter.Interpreter()
 
 class LoxRuntimeError(RuntimeError):
     def __init__(self, token:Token, mess:str) -> None:
-        self.mess = mess # ??? FIXME ???
         self.token = token
+        self.mess = mess # ??? FIXME ???
+        
 
 class LoxBreakIter(LoxRuntimeError):
     def __init__(self, token: Token, mess: str) -> None:
@@ -22,6 +24,10 @@ class LoxBreakIter(LoxRuntimeError):
 class LoxContinueIter(LoxRuntimeError):
     def __init__(self, token: Token, mess: str) -> None:
         super().__init__(token, mess)
+
+class ReturnExep(RuntimeError):
+    def __init__(self, value) -> None:
+        self.value = value
 
 
 def main():
@@ -71,6 +77,15 @@ def run(source, REPLmode = False):
     stmt_list = Parser.Parser(tokens, inREPLmode = REPLmode).parse()
 
     if stmt_list == None:
+        return
+
+    resolver = Resolver.Resolver(interpreter)
+    resolver.firstResolve(stmt_list)
+
+    # hopefully catch errors made inside the Resolver
+    # FIXME could make it so it returns an error value if something went wrong
+    # so everytime pylox.error is called
+    if Flags.hadRuntimeError or stmt_list is None:
         return
 
     out_str = interpreter.interpret(stmt_list)

@@ -18,6 +18,15 @@ class Environment():
         
         raise pylox.LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
 
+    def getAt(self, distance, name):
+        return self.ancestor(distance).values.get(name)
+
+    def ancestor(self, distance):
+        enviorment = self
+        for _ in range(distance):
+            enviorment = enviorment.enclosing
+        return enviorment
+
     def assign(self, name:Token, value):
         if name.lexeme in self.values:
             self.values[name.lexeme] = value
@@ -28,3 +37,6 @@ class Environment():
             return
 
         raise pylox.LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
+
+    def assignAt(self, distance, name:Token, value):
+        self.ancestor(distance).value[name.lexeme] = value

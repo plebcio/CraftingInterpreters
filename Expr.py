@@ -8,6 +8,12 @@ class Expr (ABC):
        pass
     def accept(self, visitor: any):
         pass
+    def __eq__(self, __o: object) -> bool:
+        return self is __o
+    def __hash__(self):
+        return hash(id(self))
+
+
 
 
 class Assign(Expr):
@@ -74,6 +80,14 @@ class Variable(Expr):
     def accept(self, visitor: any):
         return visitor.visitVariableExpr(self)
 
+class Lambda(Expr):
+    def __init__(self, params:'list[Token]', body:any, ):
+        super().__init__()
+        self.params = params
+        self.body = body
+    def accept(self, visitor: any):
+        return visitor.visitLambdaExpr(self)
+
 class ExprVisitor:
     def __str__(self):
         return self.__class__.__name__
@@ -92,4 +106,6 @@ class ExprVisitor:
     def visitUnaryExpr(self, expr:Unary):
         pass
     def visitVariableExpr(self, expr:Variable):
+        pass
+    def visitLambdaExpr(self, expr:Lambda):
         pass

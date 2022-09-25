@@ -1,6 +1,6 @@
-from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical, Call
-from Token import TokenType 
-from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function
+from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical, Call, Lambda
+from Token import TokenType, Token
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return
 import LoxCallable
 from Environment import Environment
 import pylox
@@ -44,6 +44,7 @@ class Interpreter(ExprVisitor, StmtVisitor):
         self.environment = self.globals
         # or 
         # self.environment = Environment(self.globals)
+        self.locals = {}
 
         self.globals.define("clock", LoxCallable.clock())
 
@@ -96,19 +97,39 @@ class Interpreter(ExprVisitor, StmtVisitor):
         print(stringify(value))
 
     def visitFunctionStmt(self, stmt: Function):
-        function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(stmt)
+        function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(stmt, self.environment)
         self.environment.define(stmt.name.lexeme, function)
         return None
+
+    def visitReturnStmt(self, stmt: Return):
+        value = None
+        if stmt.value != None:
+            value = self.evaluate(stmt.value)
+         
+        raise pylox.ReturnExep(value)
 
 # ----------- visiting expressions ------------
 
     def visitAssignExpr(self, expr: Assign):
         value = self.evaluate(expr.value)
-        self.environment.assign(expr.name, value)
+        
+        distance = self.locals.get(expr, None)
+        if distance != None:
+            self.environment.assignAt(distance, expr.name, value)
+        else:
+            self.globals.assign(expr.name, value)
+
         return value
 
     def visitVariableExpr(self, expr: Variable):
-        return self.environment.get(expr.name)
+        return self.lookUpVariable(expr.name, expr)
+    
+    def lookUpVariable(self, name: Token, expr: Expr):
+        distance = self.locals.get(expr, None) # wont work
+        if distance != None:
+            return self.environment.getAt(distance, name.lexeme)
+        else:
+            return self.globals.get(name)
 
     def visitLiteralExpr(self, expr: Literal):
         return expr.value
@@ -194,10 +215,14 @@ class Interpreter(ExprVisitor, StmtVisitor):
             raise pylox.LoxRuntimeError(expr.paren, "Can only call functions and classes.")
         function: LoxCallable.LoxCallable = callee
         if len(arguments) != function.arity():
-            raise pylox.runtimeError(expr.paren, f"Exprcted {function.arity()} arguments but got {arguments.size()}.")
+            raise pylox.LoxRuntimeError(expr.paren, f"Exprcted {function.arity()} arguments but got {len(arguments)}.")
 
         return function.call(self, arguments)
 
+
+    def visitLambdaExpr(self, expr: Lambda):
+        function: LoxCallable.LoxFunction = LoxCallable.LoxLambda(expr, self.environment)
+        return function
 # -------------- helpers, executors and evaluators ----
 
     def executeBlock(self, statements: 'list[Stmt]', environment: Environment):
@@ -210,9 +235,13 @@ class Interpreter(ExprVisitor, StmtVisitor):
         finally:
             self.environment = previous
     
+
+    def evaluate(self, expr: Expr):
+        return expr.accept(self)
+
     # evaluate for Stmts
     def execute(self, stms: Stmt):
         return stms.accept(self)
 
-    def evaluate(self, expr: Expr):
-        return expr.accept(self)
+    def resolve(self, expr:Expr, depth):
+        self.locals[expr] = depth # wont work
