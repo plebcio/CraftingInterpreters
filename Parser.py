@@ -1,6 +1,6 @@
 from Token import Token, TokenType
-from Expr import Expr, Binary, Grouping, Unary, Literal, Token, Variable, Assign, Logical, Call, Lambda
-from Stmt import Stmt, Expression, Print, Var, Block, If, While, StopIter, Function, Return
+from Expr import Expr, Binary, Get, Grouping, Set, Super, This, Unary, Literal, Token, Variable, Assign, Logical, Call, Lambda
+from Stmt import Class, Stmt, Expression, Print, Var, Block, If, While, StopIter, Function, Return
 import pylox
 from Flags import Flags
 
@@ -34,6 +34,8 @@ class Parser:
 
     def declaration(self):
         try:
+            if self.match([TokenType.CLASS]):
+                return self.classDeclaration()
             if self.match([TokenType.FUN]):
                 return self.function("function")
             if self.match([TokenType.VAR]):
@@ -42,6 +44,22 @@ class Parser:
         except ParseError as err:
             self.synchronize()
             return None
+
+    def classDeclaration(self):
+        name: Token = self.consume(TokenType.IDENTIFIER, "Expected class name.")
+        superclass = None
+        if self.match([TokenType.LESS]):
+            self.consume(TokenType.IDENTIFIER, "Expected superclass name")
+            superclass = Variable(self.previous())
+        self.consume(TokenType.LEFT_BRACE, "Exprectec '{' before class body")
+
+        methods = []
+        while not self.check(TokenType.RIGHT_BRACE) and not self.isAtEnd():
+            methods.append( self.function("method"))
+        
+        self.consume(TokenType.RIGHT_BRACE, "Expected '}' after function body")
+
+        return Class(name, superclass, methods)
 
     def varDeclaration(self):
         name: Token = self.consume(TokenType.IDENTIFIER, "Expected variable name.")
@@ -218,6 +236,9 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            
+            elif isinstance(expr, Get):
+                return Set(expr.object, expr.name, value)
 
             self.error(equals, "Invalid assignment target.")
 
@@ -292,6 +313,9 @@ class Parser:
         while True: 
             if self.match([TokenType.LEFT_PAREN]):
                 expr = self.finishCall(expr)
+            elif self.match([TokenType.DOT]):
+                name: Token = self.consume(TokenType.IDENTIFIER, "Expected property name after '.' .")
+                expr = Get(expr, name)
             else:
                 break
 
@@ -326,6 +350,15 @@ class Parser:
 
         if self.match([TokenType.NUMBER, TokenType.STRING]):
             return Literal(self.previous().literal)
+
+        if self.match([TokenType.SUPER]):
+            keyword: Token = self.previous()
+            self.consume(TokenType.DOT, "Expected '.' after 'super'.")
+            method: Token = self.consume(TokenType.IDENTIFIER, "Expected superclass method name")
+            return Super(keyword, method)
+
+        if self.match([TokenType.THIS]):
+            return This(self.previous())
 
         if self.match([TokenType.IDENTIFIER]):
             return Variable(self.previous())

@@ -80,12 +80,12 @@ def run(source, REPLmode = False):
         return
 
     resolver = Resolver.Resolver(interpreter)
-    resolver.firstResolve(stmt_list)
+    resolver_had_error = resolver.firstResolve(stmt_list)
 
     # hopefully catch errors made inside the Resolver
     # FIXME could make it so it returns an error value if something went wrong
     # so everytime pylox.error is called
-    if Flags.hadRuntimeError or stmt_list is None:
+    if Flags.hadRuntimeError or resolver_had_error:
         return
 
     out_str = interpreter.interpret(stmt_list)
@@ -102,8 +102,9 @@ def error(token: Token, mess: str):
         report(token.line, " at '"+ token.lexeme + "'", mess)
 
 def runtimeError(error: LoxRuntimeError):
+    print("[line " + str(error.token.line) + "] ", end="")
     print(error.mess)
-    print("[line " + str(error.token.line) + "]")
+
     Flags.hadRuntimeError = True
 
 def report(line, where, mess):

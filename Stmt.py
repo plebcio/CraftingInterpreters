@@ -23,6 +23,15 @@ class Block(Stmt):
     def accept(self, visitor: any):
         return visitor.visitBlockStmt(self)
 
+class Class(Stmt):
+    def __init__(self, name:Token, superclass:'Expr.Variable', methods:'list[Function]', ):
+        super().__init__()
+        self.name = name
+        self.superclass = superclass
+        self.methods = methods
+    def accept(self, visitor: any):
+        return visitor.visitClassStmt(self)
+
 class Expression(Stmt):
     def __init__(self, expression:Expr, ):
         super().__init__()
@@ -90,6 +99,8 @@ class StmtVisitor:
     def __str__(self):
         return self.__class__.__name__
     def visitBlockStmt(self, stmt:Block):
+        pass
+    def visitClassStmt(self, stmt:Class):
         pass
     def visitExpressionStmt(self, stmt:Expression):
         pass

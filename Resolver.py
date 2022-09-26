@@ -1,7 +1,7 @@
 from enum import Enum
-from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical, Call, Lambda
+from Expr import ExprVisitor, Expr, Binary, Grouping, Set, Super, This, Unary, Literal, Variable, Assign, Logical, Call, Lambda, Get
 from Token import Token 
-from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return, Class
 import LoxCallable
 from Environment import Environment
 import pylox
@@ -29,8 +29,14 @@ class Stack():
 
 class FunctionType(Enum):
     NONE = 0,
-    FUNCTION = 1
+    FUNCTION = 1,
+    METHOD = 2,
+    INITIALIZER = 3
 
+class ClassType(Enum):
+    NONE = 0,
+    CLASS = 1, 
+    SUBCLASS = 2
 # acual Resolver class
 
 class Resolver(StmtVisitor, ExprVisitor):
@@ -38,6 +44,8 @@ class Resolver(StmtVisitor, ExprVisitor):
         self.interpreter = interpreter
         self.scopes = Stack()
         self.currentFunction: FunctionType = FunctionType.NONE
+        self.currentClass = ClassType.NONE
+
         self.localHadError = False
 # ---------- Statements -----------------
     def firstResolve(self, stmtL):
@@ -53,6 +61,35 @@ class Resolver(StmtVisitor, ExprVisitor):
         self.endScope()
         return None
     
+    def visitClassStmt(self, stmt: Class):
+        enclosingClass: ClassType = self.currentClass
+        self.currentClass = ClassType.CLASS
+        
+        self.declare(stmt.name)
+        self.define(stmt.name)
+        if stmt.superclass != None:
+            self.currentClass = ClassType.SUBCLASS
+            if stmt.name.lexeme == stmt.superclass.name.lexeme:
+                pylox.error(stmt.superclass.name, "A class can't inherit from itself.")
+                self.localHadError = True
+            self.resolve(stmt.superclass)
+            if stmt.superclass != None:
+                self.beginScope()
+                self.scopes.peek()["super"] = True
+
+        self.beginScope()
+        self.scopes.peek()["this"] = True
+        for method in stmt.methods:
+            declaration = FunctionType.METHOD
+            if method.name.lexeme == "init":
+                declaration = FunctionType.INITIALIZER    
+            self.resolveFunction(method, declaration)
+        
+        self.endScope()
+        if stmt.superclass != None:
+            self.endScope()
+        self.currentClass = enclosingClass
+
     def visitVarStmt(self, stmt: Var):
         self.declare(stmt.name)
         if stmt.initializer != None:
@@ -83,8 +120,13 @@ class Resolver(StmtVisitor, ExprVisitor):
     def visitReturnStmt(self, stmt: Return):
         if self.currentFunction == FunctionType.NONE:
             pylox.error(stmt.keyword, "Can't return from top-level code")
-        
+            self.localHadError = True
+            return
         if stmt.value != None:
+            if self.currentFunction == FunctionType.INITIALIZER:
+                pylox.error(stmt.keyword, "Can't return a value from an initializer")
+                self.localHadError = True
+                return
             self.resolve(stmt.value)
         
     def visitWhileStmt(self, stmt: While):
@@ -101,7 +143,8 @@ class Resolver(StmtVisitor, ExprVisitor):
         if not self.scopes.isEmpty() and \
         self.scopes.peek().get(expr.name.lexeme) == False:
             pylox.error(expr.name, "Can't read local variable in its own initializer")
-
+            self.localHadError = True
+            return
         self.resolveLocal(expr, expr.name)
         return None
 
@@ -120,6 +163,9 @@ class Resolver(StmtVisitor, ExprVisitor):
         for arg in expr.arguments:
             self.resolve(arg)
 
+    def visitGetExpr(self, expr: Get):
+        self.resolve(expr.object)
+
     def visitGroupingExpr(self, expr: Grouping):
         self.resolve(expr.expression)
 
@@ -130,6 +176,27 @@ class Resolver(StmtVisitor, ExprVisitor):
         self.resolve(expr.left)
         self.resolve(expr.right)
 
+    def visitSetExpr(self, expr: Set):
+        self.resolve(expr.value)
+        self.resolve(expr.obj)
+
+    def visitSuperExpr(self, expr: Super):
+        if self.currentClass == ClassType.NONE:
+            pylox.error(expr.keyword, "Can't use 'super' ouside of a class")
+            self.localHadError = True
+        elif self.currentClass == ClassType.CLASS:
+            pylox.error(expr.keyword, "Cant use 'super' in a class with no superclass")
+            self.localHadError = True
+            
+        self.resolveLocal(expr, expr.keyword)
+
+    def visitThisExpr(self, expr: This):
+        if self.currentClass == ClassType.NONE:
+            pylox.error(expr.keyword, "Can't use 'this' outside of a class")
+            self.localHadError = True
+            return
+        self.resolveLocal(expr, expr.keyword)
+
     def visitUnaryExpr(self, expr: Unary):
         self.resolve(expr.right)
 
@@ -137,7 +204,8 @@ class Resolver(StmtVisitor, ExprVisitor):
     def visitLambdaExpr(self, expr: Lambda):
         for param in expr.params:
             self.resolve(param)
-        self.resolve(expr.body)   
+        for stmt in expr.body:
+            self.resolve(stmt)   
         
 
 # ----------- helpers ----------------
@@ -173,6 +241,8 @@ class Resolver(StmtVisitor, ExprVisitor):
         scope = self.scopes.peek()
         if name.lexeme in scope:
             pylox.error(name, "Already variable with this name in this scope.")
+            self.localHadError = True
+            return 
         scope[name.lexeme] = False
 
     def define(self, name: Token):

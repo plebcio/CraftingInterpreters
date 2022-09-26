@@ -1,6 +1,8 @@
-from Expr import ExprVisitor, Expr, Binary, Grouping, Unary, Literal, Variable, Assign, Logical, Call, Lambda
+from dis import dis
+from os import environ
+from Expr import ExprVisitor, Expr, Binary, Grouping, Set, Super, This, Unary, Literal, Variable, Assign, Logical, Call, Lambda, Get
 from Token import TokenType, Token
-from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return
+from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return, Class
 import LoxCallable
 from Environment import Environment
 import pylox
@@ -62,6 +64,29 @@ class Interpreter(ExprVisitor, StmtVisitor):
     def visitBlockStmt(self, stmt: Block):
         self.executeBlock(stmt.statements, Environment(self.environment))
 
+    def visitClassStmt(self, stmt: Class):
+        superclass = None
+        if stmt.superclass != None:
+            superclass = self.evaluate(stmt.superclass)
+            if not isinstance(superclass, LoxCallable.LoxClass):
+                raise pylox.LoxRuntimeError(stmt.superclass.name, "Superclass must be a class")
+
+        self.environment.define(stmt.name.lexeme, None)
+        if stmt.superclass != None:
+            self.environment = Environment(self.environment)
+            self.environment.define("super", superclass)
+
+        methods = {}
+        for method in stmt.methods:
+            function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(method, self.environment, (method.name.lexeme == "init") )
+            methods[method.name.lexeme] = function
+
+        klass: LoxCallable.LoxClass = LoxCallable.LoxClass(stmt.name.lexeme, superclass ,methods)
+        if superclass != None:
+            self.environment = self.environment.enclosing
+
+        self.environment.assign(stmt.name, klass)
+
     def visitVarStmt(self, stmt: Var):
         value = None
         if stmt.initializer != None:
@@ -97,7 +122,7 @@ class Interpreter(ExprVisitor, StmtVisitor):
         print(stringify(value))
 
     def visitFunctionStmt(self, stmt: Function):
-        function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(stmt, self.environment)
+        function: LoxCallable.LoxFunction = LoxCallable.LoxFunction(stmt, self.environment, False)
         self.environment.define(stmt.name.lexeme, function)
         return None
 
@@ -144,6 +169,28 @@ class Interpreter(ExprVisitor, StmtVisitor):
             return left 
 
         return self.evaluate(expr.right)
+
+    def visitSetExpr(self, expr: Set):
+        obj = self.evaluate(expr.obj)
+        if not isinstance(obj, LoxCallable.LoxInstance):
+            raise pylox.LoxRuntimeError(expr.name, 
+            "Only instances have fields")
+        
+        value = self.evaluate(expr.value)
+        obj.set(expr.name, value)
+        return value
+
+    def visitSuperExpr(self, expr: Super):
+        distance: int = self.locals[expr]
+        superclass: LoxCallable.LoxClass = self.environment.getAt(distance, "super")
+        obj: LoxCallable.LoxInstance = self.environment.getAt(distance - 1, "this")
+        method: LoxCallable.LoxFunction = superclass.findMethod(expr.method.lexeme)
+        if method == None:
+            raise pylox.LoxRuntimeError(expr.method, f"Undefined property '{expr.method.lexeme}.")
+        return method.bind(obj)
+
+    def visitThisExpr(self, expr: This):
+        return self.lookUpVariable(expr.keyword, expr)
 
     def visitGroupingExpr(self, expr: Grouping):
         return self.evaluate(expr.expression)
@@ -218,6 +265,14 @@ class Interpreter(ExprVisitor, StmtVisitor):
             raise pylox.LoxRuntimeError(expr.paren, f"Exprcted {function.arity()} arguments but got {len(arguments)}.")
 
         return function.call(self, arguments)
+
+    
+    def visitGetExpr(self, expr: Get):
+        obj = self.evaluate(expr.object)
+        if isinstance(obj, LoxCallable.LoxInstance):
+            return obj.get(expr.name)
+        
+        raise pylox.LoxRuntimeError(expr.name, "Only instances have properties.")
 
 
     def visitLambdaExpr(self, expr: Lambda):

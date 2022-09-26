@@ -39,4 +39,4 @@ class Environment():
         raise pylox.LoxRuntimeError(name, f"Undefined variable '{name.lexeme}'.")
 
     def assignAt(self, distance, name:Token, value):
-        self.ancestor(distance).value[name.lexeme] = value
+        self.ancestor(distance).values[name.lexeme] = value

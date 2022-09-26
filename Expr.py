@@ -42,6 +42,14 @@ class Call(Expr):
     def accept(self, visitor: any):
         return visitor.visitCallExpr(self)
 
+class Get(Expr):
+    def __init__(self, object:Expr, name:Token, ):
+        super().__init__()
+        self.object = object
+        self.name = name
+    def accept(self, visitor: any):
+        return visitor.visitGetExpr(self)
+
 class Grouping(Expr):
     def __init__(self, expression:Expr, ):
         super().__init__()
@@ -64,6 +72,30 @@ class Logical(Expr):
         self.right = right
     def accept(self, visitor: any):
         return visitor.visitLogicalExpr(self)
+
+class Set(Expr):
+    def __init__(self, obj:Expr, name:Token, value:Expr, ):
+        super().__init__()
+        self.obj = obj
+        self.name = name
+        self.value = value
+    def accept(self, visitor: any):
+        return visitor.visitSetExpr(self)
+
+class Super(Expr):
+    def __init__(self, keyword:Token, method:Token, ):
+        super().__init__()
+        self.keyword = keyword
+        self.method = method
+    def accept(self, visitor: any):
+        return visitor.visitSuperExpr(self)
+
+class This(Expr):
+    def __init__(self, keyword:Token, ):
+        super().__init__()
+        self.keyword = keyword
+    def accept(self, visitor: any):
+        return visitor.visitThisExpr(self)
 
 class Unary(Expr):
     def __init__(self, operator:Token, right:Expr, ):
@@ -97,11 +129,19 @@ class ExprVisitor:
         pass
     def visitCallExpr(self, expr:Call):
         pass
+    def visitGetExpr(self, expr:Get):
+        pass
     def visitGroupingExpr(self, expr:Grouping):
         pass
     def visitLiteralExpr(self, expr:Literal):
         pass
     def visitLogicalExpr(self, expr:Logical):
+        pass
+    def visitSetExpr(self, expr:Set):
+        pass
+    def visitSuperExpr(self, expr:Super):
+        pass
+    def visitThisExpr(self, expr:This):
         pass
     def visitUnaryExpr(self, expr:Unary):
         pass
