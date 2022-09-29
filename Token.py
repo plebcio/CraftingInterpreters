@@ -14,6 +14,9 @@ class TokenType(Enum):
     SEMICOLON = auto()
     SLASH = auto()
     STAR = auto()
+    # custom
+    LEFT_BRACKET = auto()
+    RIGHT_BRACKET = auto()
     # One or two character tokens. 
     BANG = auto()
     BANG_EQUAL = auto()

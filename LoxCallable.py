@@ -1,6 +1,6 @@
 import time
 
-from Expr import Lambda
+from Expr import Literal, Lambda
 import Interpreter
 from Token import Token
 from Stmt import Function
@@ -47,6 +47,7 @@ class LoxFunction(LoxCallable):
     def __str__(self) -> str:
         return f"fn < {self.declaration.name.lexme}>"
 
+
 class LoxLambda(LoxCallable):
     def __init__(self, declatration: Lambda, closure: 'Environment.Environment') -> None:
         self.declatration = declatration
@@ -70,6 +71,7 @@ class LoxLambda(LoxCallable):
     
     def __str__(self) -> str:
         return f"anmoymous lambda expression"
+
 
 class LoxClass(LoxCallable):
     def __init__(self, name, superclass: 'LoxClass',  methods: 'dict[Function]') -> None:
@@ -133,6 +135,117 @@ class clock(LoxCallable):
 
     def call(self, interpreter: 'Interpreter.Interpreter', arguments):
         return time.time()
+
+    def __str__(self) -> str:
+        return "<native fn>"
+
+class loxInput(LoxCallable):
+    def arity(self) -> int:
+        return 0
+    
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        return input()
+
+    def __str__(self) -> str:
+        return "<native fn>"
+
+
+# ------ lists ---------   
+class LoxList(LoxCallable):
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        return LoxListInstance()
+
+    def arity(self) -> int:
+        return 0
+
+    def __str__(self) -> str:
+        return "<class 'list'>"
+
+class LoxListInstance(LoxInstance):
+    def __init__(self) -> None:
+        self.list = []
+
+    def get(self, name: Token):
+        if name.lexeme == "insert":
+            return ListInsert(self, name)
+        elif name.lexeme == "get":
+            return listGet(self, name)
+        elif name.lexeme == "append":
+            return listAppend(self, name)
+        elif name.lexeme == "len":
+            return listLen(self, name)
+
+        raise pylox.LoxRuntimeError(name, f"Undefined ''''''''list'''''''' property '{name.lexeme}'.")
+
+    def set(self, name: Token, value):
+        raise pylox.LoxRuntimeError(name, "Can't set properties to built-in 'list' class")
+
+    def __str__(self) -> str:
+        return self.list.__str__()
+
+# suport list classes
+class ListInsert(LoxFunction):
+    def __init__(self, mother_list, name:Token) -> None:
+        self.this = mother_list
+        self.name = name
+
+    def arity(self) -> int:
+        return 2
+
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        position = arguments[0]
+        value = arguments[1]
+        if not isinstance(position, float) or not position.is_integer():
+            raise pylox.LoxRuntimeError(self.name, "List index must be an intiger")
+        
+        return self.this.list.insert(int(position), value)
+
+    def __str__(self) -> str:
+        return "<native fn>"
+
+class listGet(LoxFunction):
+    def __init__(self, mother_list, name:Token) -> None:
+        self.this = mother_list
+        self.name = name
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        position = arguments[0]
+        if not isinstance(position, float) or not position.is_integer():
+            raise pylox.LoxRuntimeError(self.name, "List index must be an intiger")
+        
+        return self.this.list[int(position)]
+
+    def __str__(self) -> str:
+        return "<native fn>"
+
+class listAppend(LoxFunction):
+    def __init__(self, mother_list, name:Token) -> None:
+        self.this = mother_list
+        self.name = name
+
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        value = arguments[0]
+        return self.this.list.append(value)
+
+    def __str__(self) -> str:
+        return "<native fn>"
+
+class listLen(LoxFunction):
+    def __init__(self, mother_list: LoxListInstance, name:Token) -> None:
+        self.this = mother_list
+        self.name = name
+
+    def arity(self) -> int:
+        return 0
+
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        return len(self.this.list)
 
     def __str__(self) -> str:
         return "<native fn>"

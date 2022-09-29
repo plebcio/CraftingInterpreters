@@ -67,6 +67,12 @@ class Scanner:
             self.addToken(TokenType.SEMICOLON)
         elif c == '*':
             self.addToken(TokenType.STAR)
+        #custom
+        elif c == '[':
+            self.addToken(TokenType.LEFT_BRACKET)
+        #custom
+        elif c == ']':
+            self.addToken(TokenType.RIGHT_BRACKET)
 
         elif c == '!':
             self.addToken(TokenType.BANG_EQUAL if self.match("=")

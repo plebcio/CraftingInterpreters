@@ -48,7 +48,11 @@ class Interpreter(ExprVisitor, StmtVisitor):
         # self.environment = Environment(self.globals)
         self.locals = {}
 
+# ------- defining built in functions -----
         self.globals.define("clock", LoxCallable.clock())
+        self.globals.define("input", LoxCallable.loxInput())
+        self.globals.define("list", LoxCallable.LoxList())
+
 
     def interpret(self, statements: 'list[Stmt]'):
         try:
