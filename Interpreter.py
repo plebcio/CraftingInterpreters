@@ -51,6 +51,7 @@ class Interpreter(ExprVisitor, StmtVisitor):
 # ------- defining built in functions -----
         self.globals.define("clock", LoxCallable.clock())
         self.globals.define("input", LoxCallable.loxInput())
+        self.globals.define("num", LoxCallable.loxToNum())
         self.globals.define("list", LoxCallable.LoxList())
 
 
@@ -268,8 +269,11 @@ class Interpreter(ExprVisitor, StmtVisitor):
         if len(arguments) != function.arity():
             raise pylox.LoxRuntimeError(expr.paren, f"Exprcted {function.arity()} arguments but got {len(arguments)}.")
 
-        return function.call(self, arguments)
-
+        # for native functions throwing errors    
+        try:
+            return function.call(self, arguments)
+        except pylox.NativeFuncError as err:
+            raise pylox.LoxRuntimeError(expr.paren, err.mess)
     
     def visitGetExpr(self, expr: Get):
         obj = self.evaluate(expr.object)

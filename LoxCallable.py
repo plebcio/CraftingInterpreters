@@ -249,3 +249,18 @@ class listLen(LoxFunction):
 
     def __str__(self) -> str:
         return "<native fn>"
+
+# ------ end of list stuff -------
+
+class loxToNum(LoxCallable):
+    def arity(self) -> int:
+        return 1
+
+    def call(self, interpreter: 'Interpreter.Interpreter', arguments):
+        try:
+            return float(arguments[0])
+        except ValueError:
+            raise pylox.NativeFuncError("'num' argument must be a number")
+            
+    def __str__(self) -> str:
+        return "<native fn>"

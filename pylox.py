@@ -15,8 +15,11 @@ interpreter = Interpreter.Interpreter()
 class LoxRuntimeError(RuntimeError):
     def __init__(self, token:Token, mess:str) -> None:
         self.token = token
-        self.mess = mess # ??? FIXME ???
+        self.mess = mess 
         
+class NativeFuncError(LoxRuntimeError):
+    def __init__(self, mess: str) -> None:
+        self.mess = mess
 
 class LoxBreakIter(LoxRuntimeError):
     def __init__(self, token: Token, mess: str) -> None:
