@@ -2,6 +2,7 @@
 
 # my stuff
 *.lox
+.vscode
 
 
 # Byte-compiled / optimized / DLL files
