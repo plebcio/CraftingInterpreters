@@ -58,7 +58,6 @@ static void concatenate(){
     ObjString* b = AS_STRING(pop());
     ObjString* a = AS_STRING(pop());
     int length = a->length + b->length;
-    char* chars = ALLOCATE(char, length + 1);
     ObjString* result = empltyString(length);
     memcpy(result->chars, a->chars, a->length);
     memcpy(result->chars + a->length, b->chars, b->length);
