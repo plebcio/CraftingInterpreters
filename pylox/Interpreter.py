@@ -1,13 +1,9 @@
-from dis import dis
-from os import environ
 from Expr import ExprVisitor, Expr, Binary, Grouping, Set, Super, This, Unary, Literal, Variable, Assign, Logical, Call, Lambda, Get
 from Token import TokenType, Token
 from Stmt import StmtVisitor, Stmt, Expression, Print,  Var, Block, If, While, StopIter, Function, Return, Class
 import LoxCallable
 from Environment import Environment
 import pylox
-
-
 
 # helper 
 # everything apart from nil (None under the hood) and false is evaluated to true

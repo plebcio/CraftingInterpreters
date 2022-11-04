@@ -10,7 +10,7 @@ memory.o: memory.c memory.h common.h
 	$(CC) -c memory.c
 value.o: value.c value.h common.h object.h memory.h object.h
 	$(CC) -c value.c
-vm.o: vm.c vm.h common.h debug.h object.h compiler.h table.h
+vm.o: vm.c vm.h common.h debug.h object.h compiler.h table.h object.h
 	$(CC) -c vm.c
 compiler.o: compiler.c compiler.h common.h scanner.h object.h debug.h
 	$(CC) -c compiler.c

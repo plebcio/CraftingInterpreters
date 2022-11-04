@@ -1,2 +1,0 @@
-1 - continue statments dont work for "for" loop because of desugaring proces
-    the iteration step is not executed
