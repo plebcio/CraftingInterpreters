@@ -202,11 +202,13 @@ class Resolver(StmtVisitor, ExprVisitor):
 
     # custom   
     def visitLambdaExpr(self, expr: Lambda):
+        self.beginScope()
         for param in expr.params:
-            self.resolve(param)
+            self.declare(param)
+            self.define(param)
         for stmt in expr.body:
             self.resolve(stmt)   
-        
+        self.endScope()
 
 # ----------- helpers ----------------
 
