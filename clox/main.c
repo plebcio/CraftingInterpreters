@@ -72,19 +72,6 @@ int main(int argc, char const *argv[])
         repl();
     } else if (argc == 2){
         runFile(argv[1]);
-    // } else if (argc == 3){
-        
-        // if (strcmp("-noDebug", argv[2]) == 0){
-        //     #undef DEBUG_PRINT_CODE
-        //     #undef DEBUG_TRACE_EXECUTION
-        //     // doesnt work at all
-        //     // propably not the way to do it
-        //     runFile(argv[1]);
-        // }
-        // else{
-        //     printf("Unknow flag\n");
-        // }
-
     } else {
         fprintf(stderr, "Usage: clox [script]\n");
         exit(64);
